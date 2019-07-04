@@ -3,7 +3,8 @@
     "type": "neos-package",
     "name": "sitegeist/turtlerace",
     "require": {
-        "neos/flow": "*"
+        "neos/neos": "*",
+        "neos/fusion-afx": ">=1.1"
     },
     "autoload": {
         "psr-4": {
