@@ -1,0 +1,11 @@
+privilegeTargets:
+  'Neos\Flow\Security\Authorization\Privilege\Method\MethodPrivilege':
+    'Sitegeist.TurtleRace:DocumentAgeAccess':
+      matcher: 'method(Sitegeist\TurtleRace\Controller\DocumentAgeController->(index)Action())'
+
+roles:
+  'Neos.Neos:AbstractEditor':
+    privileges:
+      -
+        privilegeTarget: 'Sitegeist.TurtleRace:DocumentAgeAccess'
+        permission: GRANT

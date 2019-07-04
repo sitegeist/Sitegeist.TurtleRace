@@ -1,0 +1,15 @@
+Neos:
+  Neos:
+    modules:
+      management:
+        submodules:
+          documentAge:
+            controller: \Sitegeist\TurtleRace\Controller\DocumentAgeController
+            label: 'Document Age'
+            description: ''
+            icon: 'fas fa-hourglass'
+            privilegeTarget: 'Sitegeist.TurtleRace:DocumentAgeAccess'
+
+  Fusion:
+    defaultContext:
+      TurtleRace.Age: 'Sitegeist\TurtleRace\Eel\AgeHelper'

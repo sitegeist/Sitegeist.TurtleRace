@@ -1,0 +1,58 @@
+include: resource://Neos.Fusion/Private/Fusion/Root.fusion
+
+Sitegeist.TurtleRace.DocumentAgeController.index = Sitegeist.TurtleRace:DocumentAge
+
+prototype(Sitegeist.TurtleRace:DocumentAge) < prototype(Neos.Fusion:Component) {
+
+    documentNodesWithAge = Neos.Fusion:RawCollection {
+        collection = ${documentNodes}
+        itemName = 'documentNode'
+        itemRenderer = Neos.Fusion:RawArray {
+            label = ${q(documentNode).property('_label')}
+            uri = Neos.Fusion:UriBuilder {
+                controller = 'Frontend/Node'
+                action = 'show'
+                package = 'Neos.Neos'
+                arguments =${{node:documentNode}}
+                absolute = true
+            }
+            lastPublicationDate = ${TurtleRace.Age.documentAge(documentNode)}
+        }
+    }
+
+    renderer = afx`
+        <table class="neos-table">
+            <thead>
+                <tr>
+                    <th>Title</th>
+                    <th>Age</th>
+                    <th>Date</th>
+                    <th>Link</th>
+                </tr>
+            </thead>
+
+            <tbody>
+                <Neos.Fusion:Collection collection={props.documentNodesWithAge} @children="itemRenderer" itemName="document">
+                <tr>
+                    <td>{document.label}</td>
+                    <td>{Date.format(Date.diff(document.lastPublicationDate, Date.now()), '%m month, %d days')}</td>
+                    <td>{Date.format(document.lastPublicationDate, 'c')}</td>
+                    <td><a href={document.uri} target="_blank">show</a></td>
+                </tr>
+                </Neos.Fusion:Collection>
+            </tbody>
+        </table>
+
+        <ul>
+        <Neos.Fusion:Collection collection={Array.range(0, pages, 1)} @children="itemRenderer" itemName="page">
+            <li>
+                <a>
+                    <Neos.Fusion:UriBuilder @path="attributes.href" action="index" arguments={{page:page}} />
+                    {page}
+                </a>
+            </li>
+        </Neos.Fusion:Collection>
+        </ul>
+    `
+}
+
