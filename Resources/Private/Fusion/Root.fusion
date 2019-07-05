@@ -26,8 +26,6 @@ prototype(Sitegeist.TurtleRace:DocumentAge) < prototype(Neos.Fusion:Component) {
     renderer = afx`
         <legend>Documents {1 + (( page - 1 ) * pageLength)} - {(page * (pageLength + 1)) - 1} of {count}  for site {site.label}</legend>
 
-        <Sitegeist.TurtleRace:DocumentAge.Paginator start={page - 4} current={page} end={page + 4} last={count ? Math.ceil(count / pageLength) : 0} />
-
         <table class="neos-table">
             <thead>
                 <tr>

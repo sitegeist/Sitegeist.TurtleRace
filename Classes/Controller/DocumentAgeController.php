@@ -41,7 +41,7 @@ class DocumentAgeController extends AbstractModuleController
     /**
      * @param int $page
      */
-    public function indexAction($site = null, int $page = 1, int $pageLength = 20)
+    public function indexAction($site = null, int $page = 1, int $pageLength = 15)
     {
         if (is_null($site)) {
             $site = $this->siteRepository->findDefault();
