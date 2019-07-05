@@ -10,6 +10,7 @@ use Neos\ContentRepository\Domain\Model\NodeData;
 use Neos\Flow\Mvc\View\ViewInterface;
 use Neos\ContentRepository\Domain\Model\NodeInterface;
 use Neos\ContentRepository\Domain\Service\ContextFactory;
+use Neos\Neos\Domain\Service\ContentContextFactory;
 
 class DocumentAgeController extends AbstractModuleController
 {
@@ -26,12 +27,10 @@ class DocumentAgeController extends AbstractModuleController
     protected $documentNodeDataRepository;
 
     /**
-     * @var ContextFactory
+     * @var ContentContextFactory
      * @Flow\Inject
      */
-    protected $contextFactory;
-
-    protected $pageLength = 20;
+    protected $contentContextFactory;
 
     /**
      * @var SiteRepository
@@ -42,16 +41,19 @@ class DocumentAgeController extends AbstractModuleController
     /**
      * @param int $page
      */
-    public function indexAction($page = 0)
+    public function indexAction($site = null, int $page = 1, int $pageLength = 20)
     {
-        $context = $this->contextFactory->create();
-        $site = $this->siteRepository->findDefault();
+        if (is_null($site)) {
+            $site = $this->siteRepository->findDefault();
+        }
+
+        $context = $this->contentContextFactory->create();
         $siteNode = $context->getNode('/sites/' . $site->getNodeName());
         $documemtNodeDataQuery = $this->documentNodeDataRepository->findLiveDocuments($siteNode->getNodeData());
 
         $query = $documemtNodeDataQuery->getQuery();
-        $query->setLimit($this->pageLength);
-        $query->setOffset($page * $this->pageLength);
+        $query->setLimit($pageLength);
+        $query->setOffset(($page-1) * $pageLength);
         $limitedQuery = $query->execute();
 
         $count = $documemtNodeDataQuery->count();
@@ -61,10 +63,11 @@ class DocumentAgeController extends AbstractModuleController
         );
 
         $this->view->assignMultiple([
+            'site' => $siteNode,
             'documentNodes' => array_filter($documentNodes),
             'count' => $count,
             'page' => $page,
-            'pages' => ($count > 0 ? ceil ($count / $this->pageLength) : 0)
+            'pageLength' => $pageLength
         ]);
     }
 }

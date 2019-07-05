@@ -1,4 +1,5 @@
 include: resource://Neos.Fusion/Private/Fusion/Root.fusion
+include: resource://Neos.Neos/Private/Fusion/Root.fusion
 
 Sitegeist.TurtleRace.DocumentAgeController.index = Sitegeist.TurtleRace:DocumentAge
 
@@ -8,23 +9,30 @@ prototype(Sitegeist.TurtleRace:DocumentAge) < prototype(Neos.Fusion:Component) {
         collection = ${documentNodes}
         itemName = 'documentNode'
         itemRenderer = Neos.Fusion:RawArray {
-            label = ${q(documentNode).property('_label')}
-            uri = Neos.Fusion:UriBuilder {
-                controller = 'Frontend/Node'
-                action = 'show'
-                package = 'Neos.Neos'
-                arguments =${{node:documentNode}}
-                absolute = true
+            label = ${documentNode.label}
+            path = Neos.Fusion:RawCollection {
+                collection = ${q(documentNode).parents('[instanceof Neos.Neos:Document]').get()}
+                itemRenderer = ${item.label}
+                @process.reverse = ${Array.reverse(value)}
+                @process.join = ${Array.join(value, ' / ')}
+            }
+            uri = Neos.Neos:NodeUri {
+                node =${documentNode}
             }
             lastPublicationDate = ${TurtleRace.Age.documentAge(documentNode)}
         }
     }
 
     renderer = afx`
+        <legend>Documents {1 + (( page - 1 ) * pageLength)} - {(page * (pageLength + 1)) - 1} of {count}  for site {site.label}</legend>
+
+        <Sitegeist.TurtleRace:DocumentAge.Paginator start={page - 4} current={page} end={page + 4} last={count ? Math.ceil(count / pageLength) : 0} />
+
         <table class="neos-table">
             <thead>
                 <tr>
                     <th>Title</th>
+                    <th>Path</th>
                     <th>Age</th>
                     <th>Date</th>
                     <th>Link</th>
@@ -35,24 +43,87 @@ prototype(Sitegeist.TurtleRace:DocumentAge) < prototype(Neos.Fusion:Component) {
                 <Neos.Fusion:Collection collection={props.documentNodesWithAge} @children="itemRenderer" itemName="document">
                 <tr>
                     <td>{document.label}</td>
+                    <td>{document.path}</td>
                     <td>{Date.format(Date.diff(document.lastPublicationDate, Date.now()), '%m month, %d days')}</td>
-                    <td>{Date.format(document.lastPublicationDate, 'c')}</td>
-                    <td><a href={document.uri} target="_blank">show</a></td>
+                    <td>{Date.format(document.lastPublicationDate, 'd.m.Y H:i')}</td>
+                    <td><a href={document.uri} target="neosPreview"><i class="icon-external-link icon-white"></i></a></td>
                 </tr>
                 </Neos.Fusion:Collection>
             </tbody>
         </table>
 
-        <ul>
-        <Neos.Fusion:Collection collection={Array.range(0, pages, 1)} @children="itemRenderer" itemName="page">
-            <li>
-                <a>
-                    <Neos.Fusion:UriBuilder @path="attributes.href" action="index" arguments={{page:page}} />
-                    {page}
-                </a>
-            </li>
-        </Neos.Fusion:Collection>
-        </ul>
+        <Sitegeist.TurtleRace:DocumentAge.Paginator start={page - 4} current={page} end={page + 4} last={count ? Math.ceil(count / pageLength) : 0} />
     `
 }
 
+
+prototype(Sitegeist.TurtleRace:DocumentAge.Paginator) < prototype(Neos.Fusion:Component) {
+
+    first = 1
+
+    # start number to be rendererd (if greater than 1 "first" is shown)
+    start = 1
+    start.@process.minOne = ${value < this.first ? this.first : value}
+
+    # last page number to be rendered
+    end = 1
+    end.@process.maxLast = ${value > this.last ? this.last : value}
+
+
+    # number to highlight as current
+    current = 1
+
+    # last possible number (used for "last" if greater than end)
+    last = 1
+
+    renderer = afx`
+        <div class="page-navigation"
+            @if.isPaginationNeeded={props.last > 1}
+        >
+            <ul class="neos-widget-paginator">
+
+                <li class="previous" @if.shall={props.current > props.first} >
+                    <Sitegeist.TurtleRace:DocumentAge.Paginator.Link page={props.current - 1}>prev</Sitegeist.TurtleRace:DocumentAge.Paginator.Link>
+                </li>
+
+                <li class="first" @if.shall={props.start > props.first}>
+                    <Sitegeist.TurtleRace:DocumentAge.Paginator.Link page={props.first}>{props.first}</Sitegeist.TurtleRace:DocumentAge.Paginator.Link>
+                </li>
+
+                <li @if.shall={props.start > 2}>...</li>
+
+                <Neos.Fusion:Collection collection={Array.range(props.start, props.end)} itemName="number" @children="itemRenderer">
+                    <li class={(props.current == number) ? 'current': ''}>
+                        <Sitegeist.TurtleRace:DocumentAge.Paginator.Link page={number}>{number}</Sitegeist.TurtleRace:DocumentAge.Paginator.Link>
+                    </li>
+                </Neos.Fusion:Collection>
+
+                <li @if.shall={props.end < (props.last - 1)}>...</li>
+
+                <li  class="last" @if.shall={props.end < props.last}>
+                    <Sitegeist.TurtleRace:DocumentAge.Paginator.Link page={props.last}>{props.last}</Sitegeist.TurtleRace:DocumentAge.Paginator.Link>
+                </li>
+
+                <li class="next" @if.shall={props.current < props.last} >
+                    <Sitegeist.TurtleRace:DocumentAge.Paginator.Link page={props.current + 1}>next</Sitegeist.TurtleRace:DocumentAge.Paginator.Link>
+                </li>
+
+            </ul>
+        </div>
+    `
+}
+
+prototype(Sitegeist.TurtleRace:DocumentAge.Paginator.Link) < prototype(Neos.Fusion:Component) {
+    page = null
+    content = null
+    renderer = Neos.Fusion:Tag {
+        tagName = 'a'
+        attributes.href = Neos.Fusion:UriBuilder {
+            action = 'index'
+            arguments = Neos.Fusion:RawArray {
+                page = ${props.page}
+            }
+        }
+        content = ${props.content}
+    }
+}
